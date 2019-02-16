@@ -11,9 +11,9 @@
 	</parent>
 
 	<groupId>com.github.chrisgleissner.sandbox</groupId>
-	<artifactId>datasource-proxy</artifactId>
+	<artifactId>jdbclog</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>datasource-proxy</name>
+	<name>jdbclog</name>
 
 	<dependencies>
 		<dependency>

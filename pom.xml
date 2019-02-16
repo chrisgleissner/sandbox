@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>datasource-proxy</module>
+        <module>jdbclog</module>
     </modules>
 
     <build>
