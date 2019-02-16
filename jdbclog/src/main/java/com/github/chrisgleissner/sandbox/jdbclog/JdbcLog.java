@@ -9,6 +9,8 @@ import net.ttddyy.dsproxy.QueryInfo;
 import net.ttddyy.dsproxy.listener.NoOpQueryExecutionListener;
 import net.ttddyy.dsproxy.listener.logging.DefaultJsonQueryLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.QueryLogEntryCreator;
+import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
+import net.ttddyy.dsproxy.proxy.DefaultConnectionIdManager;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -105,6 +107,10 @@ public class JdbcLog implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        return bean instanceof DataSource ? ProxyDataSourceBuilder.create((DataSource) bean).listener(connectionLogs).build() : bean;
+        return bean instanceof DataSource ? ProxyDataSourceBuilder.create((DataSource) bean)
+                .connectionIdManager(new DefaultConnectionIdManager())
+                .traceMethods()
+                .logQueryBySlf4j(SLF4JLogLevel.INFO)
+                .listener(connectionLogs).build() : bean;
     }
 }
