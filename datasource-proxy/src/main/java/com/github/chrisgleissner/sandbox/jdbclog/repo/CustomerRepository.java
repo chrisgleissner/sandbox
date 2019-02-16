@@ -1,4 +1,4 @@
-package com.github.chrisgleissner.sandbox.datasourceproxy;
+package com.github.chrisgleissner.sandbox.jdbclog.repo;
 
 import java.util.List;
 
