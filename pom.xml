@@ -9,6 +9,7 @@
 
     <modules>
         <module>jdbclog</module>
+        <module>springboot-micro-service</module>
     </modules>
 
     <build>
