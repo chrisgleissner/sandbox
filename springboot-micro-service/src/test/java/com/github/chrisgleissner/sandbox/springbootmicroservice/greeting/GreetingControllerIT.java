@@ -3,19 +3,15 @@ package com.github.chrisgleissner.sandbox.springbootmicroservice.greeting;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -26,9 +22,19 @@ public class GreetingControllerIT {
 
     @WithMockUser(value = "admin")
     @Test
-    public void works() {
-        ResponseEntity<String> result = template.withBasicAuth("admin", "secret")
-                .getForEntity("/private/hello", String.class);
+    public void greetingViaRestTemplate() {
+        ResponseEntity<Greeting> result = template.withBasicAuth("spring", "secret")
+                .getForEntity("/greeting?name=John", Greeting.class);
         assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertThat(result.getBody().getContent()).isEqualTo("Hello John!");
+    }
+
+    @WithMockUser(value = "admin")
+    @Test
+    public void greetingViaRestAssured() {
+        ResponseEntity<Greeting> result = template.withBasicAuth("spring", "secret")
+                .getForEntity("/greeting?name=John", Greeting.class);
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertThat(result.getBody().getContent()).isEqualTo("Hello John!");
     }
 }
