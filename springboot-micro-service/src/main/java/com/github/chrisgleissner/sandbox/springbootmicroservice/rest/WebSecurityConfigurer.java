@@ -1,4 +1,4 @@
-package com.github.chrisgleissner.sandbox.springbootmicroservice.security;
+package com.github.chrisgleissner.sandbox.springbootmicroservice.rest;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -15,7 +15,7 @@ public class WebSecurityConfigurer extends WebSecurityConfigurerAdapter {
         PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
         auth.inMemoryAuthentication()
          .passwordEncoder(encoder)
-         .withUser("spring")
+         .withUser("user")
          .password(encoder.encode("secret"))
          .roles("USER");
     }
@@ -23,11 +23,8 @@ public class WebSecurityConfigurer extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-          .antMatchers("/private/**")
-          .authenticated()
-          .antMatchers("/public/**")
-          .permitAll()
-          .and()
-          .httpBasic();
+                .antMatchers("/**").permitAll()
+                .antMatchers("/api/**").authenticated()
+         .and().httpBasic();
     }
 }
