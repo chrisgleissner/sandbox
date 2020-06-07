@@ -13,24 +13,28 @@ import org.springframework.data.neo4j.transaction.Neo4jTransactionManager;
 @EnableNeo4jRepositories(basePackageClasses = PersonRepo.class)
 public class Neo4jConfig {
 
-	@Primary @Bean @ConfigurationProperties("spring.data.neo4j")
+    @Primary
+    @Bean
+    @ConfigurationProperties("spring.data.neo4j")
     Neo4jProperties neo4jProperties() {
-		return new Neo4jProperties();
-	}
+        return new Neo4jProperties();
+    }
 
-	@Primary @Bean
+    @Primary
+    @Bean
     org.neo4j.ogm.config.Configuration ogmConfiguration() {
-		return neo4jProperties().createConfiguration();
-	}
+        return neo4jProperties().createConfiguration();
+    }
 
-	@Primary @Bean
+    @Primary
+    @Bean
     SessionFactory sessionFactory() {
-		return new SessionFactory(ogmConfiguration(), PersonRepo.class.getPackageName());
-	}
+        return new SessionFactory(ogmConfiguration(), PersonRepo.class.getPackageName());
+    }
 
-	@Bean
+    @Bean
     Neo4jTransactionManager transactionManager() {
-		return new Neo4jTransactionManager(sessionFactory());
-	}
+        return new Neo4jTransactionManager(sessionFactory());
+    }
 }
 

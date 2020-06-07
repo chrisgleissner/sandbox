@@ -15,27 +15,28 @@ import static com.github.chrisgleissner.sandbox.neo4j.multipledbs.domain2.Neo4j2
 @EnableNeo4jRepositories(sessionFactoryRef = SESSION_FACTORY, transactionManagerRef = TRANSACTION_MANAGER,
         basePackageClasses = Person2Repo.class, sessionBeanName = "sessionBean2")
 public class Neo4j2Config {
-	public static final String SESSION_FACTORY = "sessionFactory2";
+    public static final String SESSION_FACTORY = "sessionFactory2";
     public static final String TRANSACTION_MANAGER = "transactionManager2";
 
-	@Bean @ConfigurationProperties("spring.data.neo4j.domain2")
+    @Bean
+    @ConfigurationProperties("spring.data.neo4j.domain2")
     Neo4jProperties neo4jProperties2() {
-		return new Neo4jProperties();
-	}
+        return new Neo4jProperties();
+    }
 
-	@Bean
+    @Bean
     org.neo4j.ogm.config.Configuration ogmConfiguration2() {
-		return neo4jProperties2().createConfiguration();
-	}
+        return neo4jProperties2().createConfiguration();
+    }
 
-	@Bean(name = SESSION_FACTORY)
+    @Bean(name = SESSION_FACTORY)
     SessionFactory sessionFactory() {
-		return new SessionFactory(ogmConfiguration2(), Person2Repo.class.getPackageName());
-	}
+        return new SessionFactory(ogmConfiguration2(), Person2Repo.class.getPackageName());
+    }
 
-	@Bean(name = TRANSACTION_MANAGER)
+    @Bean(name = TRANSACTION_MANAGER)
     Neo4jTransactionManager transactionManager() {
-		return new Neo4jTransactionManager(sessionFactory());
-	}
+        return new Neo4jTransactionManager(sessionFactory());
+    }
 }
 
