@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -47,7 +48,7 @@ public class MultipleDbsIT {
     @Test
     void migrateStreamedResults() {
         // Prepare data in DB 1
-        int count = 300;
+        int count = 1000;
         long startTime = System.nanoTime();
         List<Person> personList = IntStream.range(0, count).mapToObj(Integer::toString).map(Person::new).collect(Collectors.toList());
         personRepo.saveAll(personList);
@@ -57,13 +58,21 @@ public class MultipleDbsIT {
         startTime = System.nanoTime();
         AtomicInteger migrationCount = new AtomicInteger(0);
         long size = personRepo.count();
+        int chunkSize = 250;
+        List<Person2> chunk = new ArrayList<>();
         try (Stream<Person> personStream = personRepo.readAllByNameNotNull()) {
             personStream.forEach(p -> {
-                person2Repo.save(new Person2(p.getName()));
-                if (migrationCount.incrementAndGet() % 100 == 0)
+                chunk.add(new Person2(p.getName()));
+                migrationCount.incrementAndGet();
+                if (chunk.size() == chunkSize) {
+                    person2Repo.saveAll(chunk);
+                    chunk.clear();
                     log.info("Migrated {} of {} entities", migrationCount.get(), size);
+                }
             });
         }
+        if (!chunk.isEmpty())
+            person2Repo.saveAll(chunk);
         log.info("Migrated {} entities in {}ms", size, Duration.ofNanos(System.nanoTime() - startTime).toMillis());
 
     }
