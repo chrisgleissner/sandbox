@@ -9,14 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest @Slf4j
@@ -43,37 +35,5 @@ public class MultipleDbsIT {
         assertThat(person2Repo.findById(savedPerson2.getId()).orElseThrow()).isEqualTo(savedPerson2);
         assertThat(personRepo.count()).isEqualTo(1);
         assertThat(person2Repo.count()).isEqualTo(1);
-    }
-
-    @Test
-    void migrateStreamedResults() {
-        // Prepare data in DB 1
-        int count = 1000;
-        long startTime = System.nanoTime();
-        List<Person> personList = IntStream.range(0, count).mapToObj(Integer::toString).map(Person::new).collect(Collectors.toList());
-        personRepo.saveAll(personList);
-        log.info("Saved Person list of size {} in {}ms", count, Duration.ofNanos(System.nanoTime() - startTime).toMillis());
-
-        // Stream from DB 1 and insert to DB 2
-        startTime = System.nanoTime();
-        AtomicInteger migrationCount = new AtomicInteger(0);
-        long size = personRepo.count();
-        int chunkSize = 250;
-        List<Person2> chunk = new ArrayList<>();
-        try (Stream<Person> personStream = personRepo.readAllByNameNotNull()) {
-            personStream.forEach(p -> {
-                chunk.add(new Person2(p.getName()));
-                migrationCount.incrementAndGet();
-                if (chunk.size() == chunkSize) {
-                    person2Repo.saveAll(chunk);
-                    chunk.clear();
-                    log.info("Migrated {} of {} entities", migrationCount.get(), size);
-                }
-            });
-        }
-        if (!chunk.isEmpty())
-            person2Repo.saveAll(chunk);
-        log.info("Migrated {} entities in {}ms", size, Duration.ofNanos(System.nanoTime() - startTime).toMillis());
-
     }
 }

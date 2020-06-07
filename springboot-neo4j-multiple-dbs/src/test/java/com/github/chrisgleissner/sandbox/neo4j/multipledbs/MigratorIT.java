@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,8 +32,10 @@ public class MigratorIT {
         personRepo.saveAll(personList);
         log.info("Saved Person list of size {} in {}ms", personListSize, Duration.ofNanos(System.nanoTime() - startTime).toMillis());
 
-        int count = Migrator.migrate(personRepo.readAllByNameNotNull(), person2Repo, p -> new Person2(p.getName()), 100);
-        assertThat(person2Repo.count()).isEqualTo(personRepo.count());
-        assertThat(count).isEqualTo(person2Repo.count());
+        try (Stream<Person> personStream = personRepo.readAllByNameNotNull()) {
+            int count = Migrator.migrate(personStream, person2Repo, p -> new Person2(p.getName()), 100);
+            assertThat(person2Repo.count()).isEqualTo(personRepo.count());
+            assertThat(count).isEqualTo(person2Repo.count());
+        }
     }
 }
