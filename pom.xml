@@ -9,7 +9,7 @@
 
     <modules>
         <module>jdbclog</module>
-        <module>springboot-micro-service</module>
+        <module>springboot-neo4j-multiple-dbs</module>
     </modules>
 
     <build>

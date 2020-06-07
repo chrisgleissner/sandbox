@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.3.0.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <groupId>com.github.chrisgleissner.sandbox</groupId>
+    <artifactId>springboot-neo4j-multiple-dbs</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <properties>
+        <java.version>11</java.version>
+        <neo4j-server.version>4.0.4</neo4j-server.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-neo4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.12</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.33.0</version>
+                <executions>
+                    <execution>
+                        <id>prepare-it</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>teardown-it</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <startParallel>true</startParallel>
+                    <containerNamePattern>%n-%a</containerNamePattern>
+                    <images>
+                        <image>
+                            <name>neo4j:${neo4j-server.version}</name>
+                            <alias>neo4j1</alias>
+                            <run>
+                                <env>
+                                    <NEO4J_AUTH>neo4j/pwd1</NEO4J_AUTH>
+                                </env>
+                                <ports>
+                                    <port>7474:7474</port>
+                                    <port>7687:7687</port>
+                                </ports>
+                                <wait>
+                                    <log>Remote interface available</log>
+                                    <time>30000</time>
+                                </wait>
+                            </run>
+                        </image>
+                        <image>
+                            <name>neo4j:${neo4j-server.version}</name>
+                            <alias>neo4j2</alias>
+                            <run>
+                                <env>
+                                    <NEO4J_AUTH>neo4j/pwd2</NEO4J_AUTH>
+                                    <NEO4J_dbms_connector_bolt_advertised__address>localhost:7688
+                                    </NEO4J_dbms_connector_bolt_advertised__address>
+                                </env>
+                                <ports>
+                                    <port>7475:7474</port>
+                                    <port>7688:7687</port>
+                                </ports>
+                                <wait>
+                                    <log>Remote interface available</log>
+                                    <time>30000</time>
+                                </wait>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
