@@ -106,7 +106,7 @@
                                 </ports>
                                 <wait>
                                     <log>Remote interface available</log>
-                                    <time>30000</time>
+                                    <time>60000</time>
                                 </wait>
                             </run>
                         </image>
@@ -125,7 +125,7 @@
                                 </ports>
                                 <wait>
                                     <log>Remote interface available</log>
-                                    <time>30000</time>
+                                    <time>60000</time>
                                 </wait>
                             </run>
                         </image>
