@@ -20,20 +20,20 @@ public class MultipleDbsIT {
 
     @Test
     void canAccessBothRepos() {
-        assertThat(personRepo.count()).isEqualTo(0);
-        assertThat(person2Repo.count()).isEqualTo(0);
+        long count = personRepo.count();
+        long count2 = person2Repo.count();
 
         Person savedPerson = personRepo.save(new Person("John"));
         assertThat(savedPerson.getId()).isEqualTo(0);
-        assertThat(personRepo.count()).isEqualTo(1);
-        assertThat(person2Repo.count()).isEqualTo(0);
+        assertThat(personRepo.count()).isEqualTo(count + 1);
+        assertThat(person2Repo.count()).isEqualTo(count2);
         assertThat(personRepo.findById(savedPerson.getId()).orElseThrow()).isEqualTo(savedPerson);
         assertThat(person2Repo.findById(savedPerson.getId())).isEmpty();
 
         Person2 savedPerson2 = person2Repo.save(new Person2("Jane"));
         assertThat(savedPerson2.getId()).isEqualTo(0);
         assertThat(person2Repo.findById(savedPerson2.getId()).orElseThrow()).isEqualTo(savedPerson2);
-        assertThat(personRepo.count()).isEqualTo(1);
-        assertThat(person2Repo.count()).isEqualTo(1);
+        assertThat(personRepo.count()).isEqualTo(count + 1);
+        assertThat(person2Repo.count()).isEqualTo(count2 + 1);
     }
 }
