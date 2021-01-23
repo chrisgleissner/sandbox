@@ -91,7 +91,7 @@ public class Log4jRegexFilter extends Filter {
         private static final long CONFIG_REFRESH_INTERVAL_IN_SECONDS = 5 * 60;
 
         private final List<String> configPaths;
-        private List<ConfigItem> configItems;
+        @Getter private List<ConfigItem> configItems;
 
         Config(String configFileNames) {
             this.configPaths = Arrays.asList(configFileNames.split(","));
@@ -135,10 +135,6 @@ public class Log4jRegexFilter extends Filter {
                 }
             }
             return allConfigItems;
-        }
-
-        List<ConfigItem> getConfigItems() {
-            return configItems;
         }
     }
 
