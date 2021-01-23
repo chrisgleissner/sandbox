@@ -49,11 +49,7 @@ public class Log4jRegexFilter extends Filter {
 
     public void setConfigPaths(String s) {
         this.configPathsString = s;
-        try {
-            this.config = new Config(s);
-        } catch (Exception e) {
-            LogLog.error("Can't parse config for " + this.getClass().getName(), e);
-        }
+        this.config = new Config(s);
     }
 
     public int decide(LoggingEvent event) {
