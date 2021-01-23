@@ -26,14 +26,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 /**
- * Filters messages with a level <= a specified threshold and a log message or stack trace matching a specified regex.
+ * Filters messages with a certain level and a log message or stack trace matching a specified regex.
  */
 @NoArgsConstructor
 public class Log4jRegexFilter extends Filter {
     private static final ConcurrentHashMap<Level, AtomicLong> deniedCountByLevel = new ConcurrentHashMap<>();
 
     /**
-     * Comma-separated config paths. Each config file line satisfying this pattern: levelThreshold,regex
+     * Comma-separated config paths. Each config file line needs to satisfy this pattern: levelThreshold ' ' regex
      */
     @Getter private String configPathsString;
     @Getter @Setter private boolean checkStackTrace = true;
@@ -72,7 +72,7 @@ public class Log4jRegexFilter extends Filter {
 
     private boolean matches(LoggingEvent event, ConfigItem configItem) {
         boolean matches = false;
-        if (configItem.getLevel().isGreaterOrEqual(event.getLevel())) {
+        if (configItem.getLevel().equals(event.getLevel())) {
             matches = configItem.getPattern().matcher(event.getRenderedMessage()).matches();
             if (!matches && checkStackTrace) {
                 String[] throwableStrRep = event.getThrowableStrRep();
@@ -144,8 +144,10 @@ public class Log4jRegexFilter extends Filter {
         Pattern pattern;
 
         static ConfigItem of(String s) {
-            final String[] segs = s.split(",");
-            return new ConfigItem(Level.toLevel(segs[0].trim()), Pattern.compile(segs[1].trim()));
+            int idx = s.indexOf(' ');
+            String level = s.substring(0, idx).trim();
+            String regex = s.substring(idx).trim();
+            return new ConfigItem(Level.toLevel(level), Pattern.compile(regex));
         }
     }
 }
