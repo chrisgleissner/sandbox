@@ -127,7 +127,7 @@ public class Log4jRegexFilter extends Filter {
                     LogLog.debug("Read config for " + this.getClass().getName() + " from " + path + ": " + configItems);
                     allConfigItems.addAll(configItems);
                 } catch (IOException e) {
-                    LogLog.warn("Failed to read from " + filePath, e);
+                    LogLog.warn("Failed to read config for " + this.getClass().getName() + " from " + filePath, e);
                 }
             }
             return allConfigItems;
