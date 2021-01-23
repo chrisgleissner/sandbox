@@ -11,6 +11,7 @@
         <module>jdbclog</module>
         <module>kotlin</module>
         <module>log4j</module>
+        <module>springboot-neo4j-multiple-dbs</module>
     </modules>
 
     <build>

@@ -1,0 +1,11 @@
+spring:
+  data:
+    neo4j:
+      username: neo4j
+      password: pwd1
+      uri: bolt://localhost:7687
+      domain2:
+        username: neo4j
+        password: pwd2
+        uri: bolt://localhost:7688
+
