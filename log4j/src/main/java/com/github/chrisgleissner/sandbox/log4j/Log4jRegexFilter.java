@@ -10,6 +10,7 @@ import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -116,7 +117,7 @@ public class Log4jRegexFilter extends Filter {
                     final List<ConfigItem> configItems = new ArrayList<>();
                     final Path path = Paths.get(filePath);
                     if (path.toFile().exists()) {
-                        final String fileContent = new String(Files.readAllBytes(path));
+                        final String fileContent = new String(Files.readAllBytes(path), Charset.forName("UTF-8"));
                         for (final String line : fileContent.split("\n")) {
                             final String trimmedLine = line.trim();
                             if (trimmedLine.length() > 0) {
