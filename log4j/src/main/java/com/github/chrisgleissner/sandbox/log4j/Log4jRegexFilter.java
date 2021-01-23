@@ -25,10 +25,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
+/**
+ * Filters messages with a level <= a specified threshold and a log message or stack trace matching a specified regex.
+ */
 @NoArgsConstructor
 public class Log4jRegexFilter extends Filter {
     private static final ConcurrentHashMap<Level, AtomicLong> deniedCountByLevel = new ConcurrentHashMap<>();
 
+    /**
+     * Comma-separated config paths. Each config file line satisfying this pattern: levelThreshold,regex
+     */
     @Getter private String configPathsString;
     @Getter @Setter private boolean checkStackTrace = true;
     private Config config;
@@ -48,13 +54,13 @@ public class Log4jRegexFilter extends Filter {
 
     public int decide(LoggingEvent event) {
         String msg = event.getRenderedMessage();
-        if (msg != null) {
+        if (msg != null && config != null) {
             for (ConfigItem configItem : config.getConfigItems()) {
-                if (matches(event, configItem)) {
-                    deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
-                    deniedCountByLevel.get(event.getLevel()).incrementAndGet();
-                    return Filter.DENY;
-                }
+                    if (matches(event, configItem)) {
+                        deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
+                        deniedCountByLevel.get(event.getLevel()).incrementAndGet();
+                        return Filter.DENY;
+                    }
             }
         }
         return Filter.NEUTRAL;
@@ -62,7 +68,7 @@ public class Log4jRegexFilter extends Filter {
 
     private boolean matches(LoggingEvent event, ConfigItem configItem) {
         boolean matches = false;
-        if (configItem.getLevel() == event.getLevel()) {
+        if (configItem.getLevel().isGreaterOrEqual(event.getLevel())) {
             matches = configItem.getPattern().matcher(event.getRenderedMessage()).matches();
 
             if (checkStackTrace) {
@@ -78,13 +84,19 @@ public class Log4jRegexFilter extends Filter {
         return matches;
     }
 
-    static class Config {
+    private static class Config {
+        private static final long CONFIG_REFRESH_INTERVAL_IN_SECONDS = 5 * 60;
+
         private final List<String> configPaths;
         private List<ConfigItem> configItems;
 
         Config(String configFileNames) {
             this.configPaths = Arrays.asList(configFileNames.split(","));
             this.configItems = loadConfigItems();
+            enablePeriodicConfigItemRefresh();
+        }
+
+        private void enablePeriodicConfigItemRefresh() {
             Executors.newScheduledThreadPool(1, new ThreadFactory() {
                 public Thread newThread(Runnable r) {
                     Thread t = Executors.defaultThreadFactory().newThread(r);
@@ -95,19 +107,22 @@ public class Log4jRegexFilter extends Filter {
                 @Override public void run() {
                     Config.this.configItems = loadConfigItems();
                 }
-            }, 5, 5, TimeUnit.SECONDS);
+            }, CONFIG_REFRESH_INTERVAL_IN_SECONDS, CONFIG_REFRESH_INTERVAL_IN_SECONDS, TimeUnit.SECONDS);
         }
 
-        private List<ConfigItem> loadConfigItems() {
-            List<ConfigItem> allConfigItems = new ArrayList<>();
-            for (String filePath : configPaths) {
+        List<ConfigItem> loadConfigItems() {
+            final List<ConfigItem> allConfigItems = new ArrayList<>();
+            for (final String filePath : configPaths) {
                 try {
-                    List<ConfigItem> configItems = new ArrayList<>();
-                    Path path = Paths.get(filePath);
+                    final List<ConfigItem> configItems = new ArrayList<>();
+                    final Path path = Paths.get(filePath);
                     if (path.toFile().exists()) {
-                        String fileContent = new String(Files.readAllBytes(path));
-                        for (String line : fileContent.split("\n")) {
-                            configItems.add(ConfigItem.of(line));
+                        final String fileContent = new String(Files.readAllBytes(path));
+                        for (final String line : fileContent.split("\n")) {
+                            final String trimmedLine = line.trim();
+                            if (trimmedLine.length() > 0) {
+                                configItems.add(ConfigItem.of(trimmedLine));
+                            }
                         }
                     }
                     LogLog.debug("Read config for " + this.getClass().getName() + " from " + path + ": " + configItems);
@@ -119,7 +134,7 @@ public class Log4jRegexFilter extends Filter {
             return allConfigItems;
         }
 
-        public List<ConfigItem> getConfigItems() {
+        List<ConfigItem> getConfigItems() {
             return configItems;
         }
     }
@@ -129,8 +144,8 @@ public class Log4jRegexFilter extends Filter {
         Level level;
         Pattern pattern;
 
-        public static ConfigItem of(String s) {
-            String[] segs = s.split(",");
+        static ConfigItem of(String s) {
+            final String[] segs = s.split(",");
             return new ConfigItem(Level.toLevel(segs[0].trim()), Pattern.compile(segs[1].trim()));
         }
     }
