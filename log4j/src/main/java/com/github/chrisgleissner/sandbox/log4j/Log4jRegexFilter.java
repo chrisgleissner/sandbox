@@ -60,11 +60,11 @@ public class Log4jRegexFilter extends Filter {
         String msg = event.getRenderedMessage();
         if (msg != null && config != null) {
             for (ConfigItem configItem : config.getConfigItems()) {
-                    if (matches(event, configItem)) {
-                        deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
-                        deniedCountByLevel.get(event.getLevel()).incrementAndGet();
-                        return Filter.DENY;
-                    }
+                if (matches(event, configItem)) {
+                    deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
+                    deniedCountByLevel.get(event.getLevel()).incrementAndGet();
+                    return Filter.DENY;
+                }
             }
         }
         return Filter.NEUTRAL;
@@ -74,8 +74,7 @@ public class Log4jRegexFilter extends Filter {
         boolean matches = false;
         if (configItem.getLevel().isGreaterOrEqual(event.getLevel())) {
             matches = configItem.getPattern().matcher(event.getRenderedMessage()).matches();
-
-            if (checkStackTrace) {
+            if (!matches && checkStackTrace) {
                 String[] throwableStrRep = event.getThrowableStrRep();
                 if (throwableStrRep != null) {
                     int i = 0;
