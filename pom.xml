@@ -9,7 +9,8 @@
 
     <modules>
         <module>jdbclog</module>
-        <module>springboot-micro-service</module>
+        <module>kotlin</module>
+        <module>log4j</module>
     </modules>
 
     <build>
