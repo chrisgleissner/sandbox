@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * Filters messages with a certain level and a log message or stack trace matching a specified regex.
  */
 @NoArgsConstructor
-public class Log4jRegexFilter extends Filter {
+public class RegexFilter extends Filter {
     private static final ConcurrentHashMap<Level, AtomicLong> deniedCountByLevel = new ConcurrentHashMap<>();
 
     /**
@@ -42,7 +42,7 @@ public class Log4jRegexFilter extends Filter {
 
     public static Map<Level, Long> getDeniedCountByLevel() {
         Map<Level, Long> deniedCountByLevel = new HashMap<>();
-        for (Map.Entry<Level, AtomicLong> entry : Log4jRegexFilter.deniedCountByLevel.entrySet()) {
+        for (Map.Entry<Level, AtomicLong> entry : RegexFilter.deniedCountByLevel.entrySet()) {
             deniedCountByLevel.put(entry.getKey(), entry.getValue().get());
         }
         return deniedCountByLevel;
@@ -125,10 +125,10 @@ public class Log4jRegexFilter extends Filter {
                             }
                         }
                     }
-                    LogLog.debug("Read config for " + this.getClass().getName() + " from " + path + ": " + configItems);
+                    LogLog.debug("Read config for " + RegexFilter.class.getName() + " from " + path + ": " + configItems);
                     allConfigItems.addAll(configItems);
                 } catch (IOException e) {
-                    LogLog.warn("Failed to read config for " + this.getClass().getName() + " from " + filePath, e);
+                    LogLog.warn("Failed to read config for " + RegexFilter.class.getName() + " from " + filePath, e);
                 }
             }
             return allConfigItems;

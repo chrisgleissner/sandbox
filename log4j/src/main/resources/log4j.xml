@@ -6,7 +6,7 @@
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
         </layout>
-        <filter class="com.github.chrisgleissner.sandbox.log4j.Log4jRegexFilter">
+        <filter class="com.github.chrisgleissner.sandbox.log4j.RegexFilter">
             <param name="ConfigPaths" value="src/main/resources/log4j-regex-filter.conf,src/main/resources/log4j-regex-filter2.conf,doesNotExist" />
             <param name="CheckStackTrace" value="true"/>
         </filter>

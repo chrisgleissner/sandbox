@@ -4,12 +4,12 @@ import org.apache.log4j.Level;
 import org.junit.Test;
 import org.slf4j.Logger;
 
-import static com.github.chrisgleissner.sandbox.log4j.Log4jRegexFilter.getDeniedCountByLevel;
+import static com.github.chrisgleissner.sandbox.log4j.RegexFilter.getDeniedCountByLevel;
 import static org.junit.Assert.assertEquals;
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class Log4jRegexFilterTest {
-    private static final Logger log = getLogger(Log4jRegexFilterTest.class);
+public class RegexFilterTest {
+    private static final Logger log = getLogger(RegexFilterTest.class);
 
     @Test
     public void canFilter() {
