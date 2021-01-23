@@ -1,5 +1,8 @@
 package com.github.chrisgleissner.sandbox.log4j;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.Value;
 import org.apache.log4j.Level;
 import org.apache.log4j.helpers.LogLog;
@@ -22,11 +25,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
+@NoArgsConstructor
 public class Log4jRegexFilter extends Filter {
-    private String configPathsString;
-    private Config config;
     private static final ConcurrentHashMap<Level, AtomicLong> deniedCountByLevel = new ConcurrentHashMap<>();
 
+    @Getter private String configPathsString;
+    @Getter @Setter private boolean checkStackTrace = true;
+    private Config config;
 
     public static Map<Level, Long> getDeniedCountByLevel() {
         Map<Level, Long> deniedCountByLevel = new HashMap<>();
@@ -34,13 +39,6 @@ public class Log4jRegexFilter extends Filter {
             deniedCountByLevel.put(entry.getKey(), entry.getValue().get());
         }
         return deniedCountByLevel;
-    }
-
-    public Log4jRegexFilter() {
-    }
-
-    public String getConfigPaths() {
-        return this.configPathsString;
     }
 
     public void setConfigPaths(String s) {
@@ -52,7 +50,7 @@ public class Log4jRegexFilter extends Filter {
         String msg = event.getRenderedMessage();
         if (msg != null) {
             for (ConfigItem configItem : config.getConfigItems()) {
-                if (configItem.getLevel() == event.getLevel() && configItem.getPattern().matcher(event.getRenderedMessage()).matches()) {
+                if (matches(event, configItem)) {
                     deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
                     deniedCountByLevel.get(event.getLevel()).incrementAndGet();
                     return Filter.DENY;
@@ -60,6 +58,24 @@ public class Log4jRegexFilter extends Filter {
             }
         }
         return Filter.NEUTRAL;
+    }
+
+    private boolean matches(LoggingEvent event, ConfigItem configItem) {
+        boolean matches = false;
+        if (configItem.getLevel() == event.getLevel()) {
+            matches = configItem.getPattern().matcher(event.getRenderedMessage()).matches();
+
+            if (checkStackTrace) {
+                String[] throwableStrRep = event.getThrowableStrRep();
+                if (throwableStrRep != null) {
+                    int i = 0;
+                    while (!matches && i < throwableStrRep.length) {
+                        matches = configItem.getPattern().matcher(throwableStrRep[i++]).matches();
+                    }
+                }
+            }
+        }
+        return matches;
     }
 
     static class Config {

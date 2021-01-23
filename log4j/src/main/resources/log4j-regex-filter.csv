@@ -1,2 +1,3 @@
-info,.*msg.*
-warn,.*msg.*
+info,.*filter.*
+warn , .*filter.*
+ ERROR,.*filter.*

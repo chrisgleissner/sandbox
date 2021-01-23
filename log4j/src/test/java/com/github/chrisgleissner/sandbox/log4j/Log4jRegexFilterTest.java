@@ -12,10 +12,17 @@ public class Log4jRegexFilterTest {
 
     @Test
     public void canFilter() {
-        log.info("info msg");
-        log.info("info message");
-        log.warn("warn msg");
+        // show
+        log.info("msg");
+        log.warn("msg");
+
+        // filter
+        log.info("filter this");
+        log.warn("filter this");
+        log.error("msg", new RuntimeException("filter because of this stack line"));
+
         Assert.assertEquals(1L, (long) Log4jRegexFilter.getDeniedCountByLevel().get(Level.INFO));
         Assert.assertEquals(1L, (long) Log4jRegexFilter.getDeniedCountByLevel().get(Level.WARN));
+        Assert.assertEquals(1L, (long) Log4jRegexFilter.getDeniedCountByLevel().get(Level.ERROR));
     }
 }
