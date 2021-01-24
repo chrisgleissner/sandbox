@@ -1,12 +1,8 @@
-filters:
-  - filter:
-    level: error
-    message: .*filter.*text
-    regex: true
-    checkStackTrace: true
-  - filter:
-    level: warn
-    message: filter
-  - filter:
-    level: info
-    message: filter
+- message: .*filter.*text
+  level: error
+  regex: true
+  checkStackTrace: true
+- message: filter
+  level: warn
+- message: filter
+  level: info
