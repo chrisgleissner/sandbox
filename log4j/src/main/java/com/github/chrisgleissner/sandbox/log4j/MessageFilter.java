@@ -2,7 +2,6 @@ package com.github.chrisgleissner.sandbox.log4j;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.Value;
 import lombok.val;
 import org.apache.log4j.Level;
@@ -28,22 +27,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 /**
- * Filters messages with a certain level and a log message or stack trace matching a specified regex.
+ * Filters messages with a certain level and a log message or stack trace matching a specified string or regex.
  */
 @NoArgsConstructor
-public class RegexFilter extends Filter {
+public class MessageFilter extends Filter {
     private static final ConcurrentHashMap<Level, AtomicLong> deniedCountByLevel = new ConcurrentHashMap<>();
 
-    /**
-     * Comma-separated config paths. Each config file line needs to satisfy this pattern: levelThreshold ' ' regex
-     */
     @Getter private String configPathsString;
-    @Getter @Setter private boolean checkStackTrace = true;
     private Config config;
 
     public static Map<Level, Long> getDeniedCountByLevel() {
-        Map<Level, Long> deniedCountByLevel = new HashMap<>();
-        for (Map.Entry<Level, AtomicLong> entry : RegexFilter.deniedCountByLevel.entrySet()) {
+        val deniedCountByLevel = new HashMap<Level, Long>();
+        for (val entry : MessageFilter.deniedCountByLevel.entrySet()) {
             deniedCountByLevel.put(entry.getKey(), entry.getValue().get());
         }
         return deniedCountByLevel;
@@ -55,9 +50,9 @@ public class RegexFilter extends Filter {
     }
 
     public int decide(LoggingEvent event) {
-        String msg = event.getRenderedMessage();
+        val msg = event.getRenderedMessage();
         if (msg != null && config != null) {
-            for (Config.FilterItem filterItem : config.getFilterItems()) {
+            for (val filterItem : config.getFilterItems()) {
                 if (filterItem.matches(event)) {
                     deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
                     deniedCountByLevel.get(event.getLevel()).incrementAndGet();
@@ -95,12 +90,12 @@ public class RegexFilter extends Filter {
         }
 
         List<FilterItem> loadFilterItems() {
-            final List<FilterItem> allFilterItems = new ArrayList<>();
-            for (final String configPathName : configPaths) {
+            val allFilterItems = new ArrayList<FilterItem>();
+            for (val configPathName : configPaths) {
                 try {
                     allFilterItems.addAll(loadFilterItems(Paths.get(configPathName)));
                 } catch (IOException e) {
-                    LogLog.warn("Failed to read config for " + RegexFilter.class.getName() + " from " + configPathName, e);
+                    LogLog.warn("Failed to read config for " + MessageFilter.class.getName() + " from " + configPathName, e);
                 }
             }
             return allFilterItems;
@@ -109,36 +104,36 @@ public class RegexFilter extends Filter {
         List<FilterItem> loadFilterItems(Path path) throws IOException {
             val filterItems = new ArrayList<FilterItem>();
             if (path.toFile().exists()) {
-                try (FileInputStream fis = new FileInputStream(path.toFile())) {
-                    Map<String, Object> yaml = new Yaml().load(fis);
+                try (val fis = new FileInputStream(path.toFile())) {
+                    val yaml = (Map<String, Object>) new Yaml().load(fis);
                     if (yaml != null) {
-                        List<Map<String, Object>> yamlFilters = (List<Map<String, Object>>) yaml.get("filters");
+                        val yamlFilters = (List<Map<String, Object>>) yaml.get("filters");
                         if (yamlFilters != null) {
-                            for (Map<String, Object> yamlFilterItem : yamlFilters) {
+                            for (val yamlFilterItem : yamlFilters) {
                                 filterItems.add(FilterItem.of(yamlFilterItem));
                             }
                         }
                     }
                 }
             }
-            LogLog.debug("Read config for " + RegexFilter.class.getName() + " from " + path + ": " + filterItems);
+            LogLog.debug("Read config for " + MessageFilter.class.getName() + " from " + path + ": " + filterItems);
             return filterItems;
         }
 
         static abstract class FilterItem {
 
             static FilterItem of(Map<String, Object> yamlFilterItem) {
-                String level = (String) yamlFilterItem.get("level");
-                String message = (String) yamlFilterItem.get("message");
-                boolean regex = getOrDefault(yamlFilterItem, "regex", false);
-                boolean checkStackTrace = getOrDefault(yamlFilterItem, "checkStackTrace", false);
+                val level = (String) yamlFilterItem.get("level");
+                val message = (String) yamlFilterItem.get("message");
+                val regex = getOrDefault(yamlFilterItem, "regex", false);
+                val checkStackTrace = getOrDefault(yamlFilterItem, "checkStackTrace", false);
                 return regex
                         ? new RegexFilterItem(Level.toLevel(level), Pattern.compile(message), checkStackTrace)
                         : new StringFilterItem(Level.toLevel(level), message, checkStackTrace);
             }
 
             static boolean getOrDefault(Map<String, Object> map, String key, boolean defaultValue) {
-                Boolean value = (Boolean) map.get(key);
+                val value = (Boolean) map.get(key);
                 return value == null ? defaultValue : value;
             }
 
@@ -153,7 +148,7 @@ public class RegexFilter extends Filter {
                 if (getLevel().equals(event.getLevel())) {
                     matches = matches(event.getRenderedMessage());
                     if (!matches && isCheckStackTrace()) {
-                        String[] throwableStrRep = event.getThrowableStrRep();
+                        val throwableStrRep = event.getThrowableStrRep();
                         if (throwableStrRep != null) {
                             int i = 0;
                             while (!matches && i < throwableStrRep.length) {
