@@ -105,14 +105,9 @@ public class MessageFilter extends Filter {
             val filterItems = new ArrayList<FilterItem>();
             if (path.toFile().exists()) {
                 try (val fis = new FileInputStream(path.toFile())) {
-                    val yaml = (Map<String, Object>) new Yaml().load(fis);
-                    if (yaml != null) {
-                        val yamlFilters = (List<Map<String, Object>>) yaml.get("filters");
-                        if (yamlFilters != null) {
-                            for (val yamlFilterItem : yamlFilters) {
-                                filterItems.add(FilterItem.of(yamlFilterItem));
-                            }
-                        }
+                    val yaml = (List<Map<String, Object>>) new Yaml().load(fis);
+                    for (val yamlFilterItem : yaml) {
+                        filterItems.add(FilterItem.of(yamlFilterItem));
                     }
                 }
             }
@@ -124,7 +119,11 @@ public class MessageFilter extends Filter {
 
             static FilterItem of(Map<String, Object> yamlFilterItem) {
                 val level = (String) yamlFilterItem.get("level");
+                if (level == null)
+                    throw new RuntimeException("Missing level");
                 val message = (String) yamlFilterItem.get("message");
+                if (message == null)
+                    throw new RuntimeException("Missing message");
                 val regex = getOrDefault(yamlFilterItem, "regex", false);
                 val checkStackTrace = getOrDefault(yamlFilterItem, "checkStackTrace", false);
                 return regex

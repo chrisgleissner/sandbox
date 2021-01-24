@@ -1,4 +1,2 @@
-filters:
-  - filter:
-    level: info
-    message: ignore
+- message: ignore
+  level: info
