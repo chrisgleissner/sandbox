@@ -11,10 +11,9 @@ import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,25 +41,21 @@ public class MessageFilter extends Filter {
     }
 
     public int decide(LoggingEvent event) {
-        val msg = event.getRenderedMessage();
-        if (config != null) {
-            for (val filterItem : config.getFilterItems()) {
-                if (filterItem.matches(event)) {
-                    deniedCount.incrementAndGet();
-                    return Filter.DENY;
-                }
+        for (val filterItem : config.getFilterItems()) {
+            if (filterItem.matches(event)) {
+                deniedCount.incrementAndGet();
+                return Filter.DENY;
             }
         }
         return Filter.NEUTRAL;
     }
 
     private static class Config {
-        private static final long CONFIG_REFRESH_INTERVAL_IN_SECONDS = 60 * 5;
-        private final List<String> configPaths;
+        private final List<String> configPathNames;
         @Getter private List<FilterItem> filterItems;
 
-        Config(String configFileNames) {
-            this.configPaths = Arrays.asList(configFileNames.split(","));
+        Config(String configPathNameString) {
+            this.configPathNames = Arrays.asList(configPathNameString.split(","));
             this.filterItems = loadFilterItems();
             Executors.newScheduledThreadPool(1, new ThreadFactory() {
                 public Thread newThread(Runnable r) {
@@ -72,32 +67,31 @@ public class MessageFilter extends Filter {
                 @Override public void run() {
                     Config.this.filterItems = loadFilterItems();
                 }
-            }, CONFIG_REFRESH_INTERVAL_IN_SECONDS, CONFIG_REFRESH_INTERVAL_IN_SECONDS, TimeUnit.SECONDS);
+            }, 5, 5, TimeUnit.MINUTES);
         }
 
         List<FilterItem> loadFilterItems() {
-            val allFilterItems = new ArrayList<FilterItem>();
-            for (val configPathName : configPaths) {
+            val result = new ArrayList<FilterItem>();
+            for (val configPathName : configPathNames) {
                 try {
-                    allFilterItems.addAll(loadFilterItems(Paths.get(configPathName)));
+                    result.addAll(loadFilterItems(new File(configPathName)));
                 } catch (Throwable e) {
                     LogLog.warn("Failed to read config for " + MessageFilter.class.getName() + " from " + configPathName, e);
                 }
             }
-            return allFilterItems;
+            return result;
         }
 
-        List<FilterItem> loadFilterItems(Path path) throws IOException {
+        List<FilterItem> loadFilterItems(File file) throws IOException {
             val filterItems = new ArrayList<FilterItem>();
-            if (path.toFile().isFile()) {
-                try (val fis = new FileInputStream(path.toFile())) {
-                    List<Map<String, Object>> yamlDocument = new Yaml().load(fis);
-                    for (val yamlFilterItem : yamlDocument) {
+            if (file.isFile()) {
+                try (val is = new FileInputStream(file)) {
+                    for (val yamlFilterItem : new Yaml().<List<Map<String, Object>>>load(is)) {
                         filterItems.add(new FilterItem(yamlFilterItem));
                     }
                 }
             }
-            LogLog.debug("Read config for " + MessageFilter.class.getName() + " from " + path + ": " + filterItems);
+            LogLog.debug("Read config for " + MessageFilter.class.getName() + " from " + file + ": " + filterItems);
             return filterItems;
         }
     }
@@ -111,16 +105,13 @@ public class MessageFilter extends Filter {
         boolean checkStackTrace;
 
         FilterItem(Map<String, Object> yamlFilterItem) {
-            this.regex = getBoolean(yamlFilterItem, "regex");
-            this.checkStackTrace = getBoolean(yamlFilterItem, "checkStackTrace");
             this.message = (String) yamlFilterItem.get("message");
             if (this.message == null)
-                throw new RuntimeException("Missing message");
+                throw new IllegalArgumentException("Missing message");
+            this.checkStackTrace = getBoolean(yamlFilterItem, "checkStackTrace");
+            this.regex = getBoolean(yamlFilterItem, "regex");
             this.messagePattern = regex ? Pattern.compile(this.message) : null;
-            val level = (String) yamlFilterItem.get("level");
-            if (level == null)
-                throw new RuntimeException("Missing level");
-            this.level = Level.toLevel(level);
+            this.level = Level.toLevel((String) yamlFilterItem.get("level"));
         }
 
         static boolean getBoolean(Map<String, Object> map, String key) {
