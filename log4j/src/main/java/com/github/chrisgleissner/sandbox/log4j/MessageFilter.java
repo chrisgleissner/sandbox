@@ -105,14 +105,9 @@ public class MessageFilter extends Filter {
             val filterItems = new ArrayList<FilterItem>();
             if (path.toFile().exists()) {
                 try (val fis = new FileInputStream(path.toFile())) {
-                    val yaml = (Map<String, Object>) new Yaml().load(fis);
-                    if (yaml != null) {
-                        val yamlFilters = (List<Map<String, Object>>) yaml.get("filters");
-                        if (yamlFilters != null) {
-                            for (val yamlFilterItem : yamlFilters) {
-                                filterItems.add(FilterItem.of(yamlFilterItem));
-                            }
-                        }
+                    val yaml = (List<Map<String, Object>>) new Yaml().load(fis);
+                    for (val yamlFilterItem : yaml) {
+                        filterItems.add(FilterItem.of(yamlFilterItem)):
                     }
                 }
             }
