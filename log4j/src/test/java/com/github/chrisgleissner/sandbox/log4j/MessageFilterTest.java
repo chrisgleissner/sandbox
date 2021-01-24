@@ -1,31 +1,45 @@
 package com.github.chrisgleissner.sandbox.log4j;
 
-import org.apache.log4j.Level;
 import org.junit.Test;
 import org.slf4j.Logger;
 
-import static com.github.chrisgleissner.sandbox.log4j.MessageFilter.getDeniedCountByLevel;
+import static com.github.chrisgleissner.sandbox.log4j.MessageFilter.getDeniedCount;
 import static org.junit.Assert.assertEquals;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class MessageFilterTest {
     private static final Logger log = getLogger(MessageFilterTest.class);
+    private int deniedCount = 0;
 
     @Test
-    public void canFilter() {
+    public void canFilter() throws InterruptedException {
         log.info("msg");
-        log.info("info message to filter"); // filter
-        assertEquals(1L, (long) getDeniedCountByLevel().get(Level.INFO));
+        assertAccepted();
+
+        log.info("info message to filter");
+        assertDenied();
 
         log.warn("msg");
-        log.warn("filter"); // filter
-        assertEquals(1L, (long) getDeniedCountByLevel().get(Level.WARN));
+        assertAccepted();
 
-        log.error("msg", new RuntimeException("filter because of this text")); // filter
-        assertEquals(1L, (long) getDeniedCountByLevel().get(Level.ERROR));
+        log.warn("filter");
+        assertDenied();
+
+        log.error("msg", new RuntimeException("filter because of this text"));
+        assertDenied();
 
         log.error("ignore");
-        log.info("ignore"); // filter
-        assertEquals(2L, (long) getDeniedCountByLevel().get(Level.INFO));
+        assertAccepted();
+
+        log.info("ignore");
+        assertDenied();
+    }
+
+    private void assertDenied() {
+        assertEquals(++deniedCount, getDeniedCount());
+    }
+
+    private void assertAccepted() {
+        assertEquals(deniedCount, getDeniedCount());
     }
 }
