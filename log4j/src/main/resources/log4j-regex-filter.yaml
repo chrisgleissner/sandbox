@@ -1,0 +1,12 @@
+filters:
+  - filter:
+    level: error
+    message: .*filter.*text
+    regex: true
+    checkStackTrace: true
+  - filter:
+    level: warn
+    message: filter
+  - filter:
+    level: info
+    message: filter

@@ -21,7 +21,7 @@ public class RegexFilterTest {
         log.warn("filter"); // filter
         assertEquals(1L, (long) getDeniedCountByLevel().get(Level.WARN));
 
-        log.error("msg", new RuntimeException("filter because of this stack line")); // filter
+        log.error("msg", new RuntimeException("filter because of this text")); // filter
         assertEquals(1L, (long) getDeniedCountByLevel().get(Level.ERROR));
 
         log.error("ignore");

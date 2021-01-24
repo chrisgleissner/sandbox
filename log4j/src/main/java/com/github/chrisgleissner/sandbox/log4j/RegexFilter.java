@@ -4,14 +4,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Value;
+import lombok.val;
 import org.apache.log4j.Level;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -56,8 +57,8 @@ public class RegexFilter extends Filter {
     public int decide(LoggingEvent event) {
         String msg = event.getRenderedMessage();
         if (msg != null && config != null) {
-            for (ConfigItem configItem : config.getConfigItems()) {
-                if (matches(event, configItem)) {
+            for (Config.FilterItem filterItem : config.getFilterItems()) {
+                if (filterItem.matches(event)) {
                     deniedCountByLevel.putIfAbsent(event.getLevel(), new AtomicLong());
                     deniedCountByLevel.get(event.getLevel()).incrementAndGet();
                     return Filter.DENY;
@@ -67,36 +68,19 @@ public class RegexFilter extends Filter {
         return Filter.NEUTRAL;
     }
 
-    private boolean matches(LoggingEvent event, ConfigItem configItem) {
-        boolean matches = false;
-        if (configItem.getLevel().equals(event.getLevel())) {
-            matches = configItem.getPattern().matcher(event.getRenderedMessage()).matches();
-            if (!matches && checkStackTrace) {
-                String[] throwableStrRep = event.getThrowableStrRep();
-                if (throwableStrRep != null) {
-                    int i = 0;
-                    while (!matches && i < throwableStrRep.length) {
-                        matches = configItem.getPattern().matcher(throwableStrRep[i++]).matches();
-                    }
-                }
-            }
-        }
-        return matches;
-    }
-
     private static class Config {
         private static final long CONFIG_REFRESH_INTERVAL_IN_SECONDS = 5 * 60;
 
         private final List<String> configPaths;
-        @Getter private List<ConfigItem> configItems;
+        @Getter private List<FilterItem> filterItems;
 
         Config(String configFileNames) {
             this.configPaths = Arrays.asList(configFileNames.split(","));
-            this.configItems = loadConfigItems();
-            enablePeriodicConfigItemRefresh();
+            this.filterItems = loadFilterItems();
+            enablePeriodicConfigRefresh();
         }
 
-        private void enablePeriodicConfigItemRefresh() {
+        void enablePeriodicConfigRefresh() {
             Executors.newScheduledThreadPool(1, new ThreadFactory() {
                 public Thread newThread(Runnable r) {
                     Thread t = Executors.defaultThreadFactory().newThread(r);
@@ -105,46 +89,104 @@ public class RegexFilter extends Filter {
                 }
             }).scheduleAtFixedRate(new Runnable() {
                 @Override public void run() {
-                    Config.this.configItems = loadConfigItems();
+                    Config.this.filterItems = loadFilterItems();
                 }
             }, CONFIG_REFRESH_INTERVAL_IN_SECONDS, CONFIG_REFRESH_INTERVAL_IN_SECONDS, TimeUnit.SECONDS);
         }
 
-        List<ConfigItem> loadConfigItems() {
-            final List<ConfigItem> allConfigItems = new ArrayList<>();
-            for (final String filePath : configPaths) {
+        List<FilterItem> loadFilterItems() {
+            final List<FilterItem> allFilterItems = new ArrayList<>();
+            for (final String configPathName : configPaths) {
                 try {
-                    final List<ConfigItem> configItems = new ArrayList<>();
-                    final Path path = Paths.get(filePath);
-                    if (path.toFile().exists()) {
-                        final String fileContent = new String(Files.readAllBytes(path), Charset.forName("UTF-8"));
-                        for (final String line : fileContent.split("\n")) {
-                            final String trimmedLine = line.trim();
-                            if (trimmedLine.length() > 0) {
-                                configItems.add(ConfigItem.of(trimmedLine));
+                    allFilterItems.addAll(loadFilterItems(Paths.get(configPathName)));
+                } catch (IOException e) {
+                    LogLog.warn("Failed to read config for " + RegexFilter.class.getName() + " from " + configPathName, e);
+                }
+            }
+            return allFilterItems;
+        }
+
+        List<FilterItem> loadFilterItems(Path path) throws IOException {
+            val filterItems = new ArrayList<FilterItem>();
+            if (path.toFile().exists()) {
+                try (FileInputStream fis = new FileInputStream(path.toFile())) {
+                    Map<String, Object> yaml = new Yaml().load(fis);
+                    if (yaml != null) {
+                        List<Map<String, Object>> yamlFilters = (List<Map<String, Object>>) yaml.get("filters");
+                        if (yamlFilters != null) {
+                            for (Map<String, Object> yamlFilterItem : yamlFilters) {
+                                filterItems.add(FilterItem.of(yamlFilterItem));
                             }
                         }
                     }
-                    LogLog.debug("Read config for " + RegexFilter.class.getName() + " from " + path + ": " + configItems);
-                    allConfigItems.addAll(configItems);
-                } catch (IOException e) {
-                    LogLog.warn("Failed to read config for " + RegexFilter.class.getName() + " from " + filePath, e);
                 }
             }
-            return allConfigItems;
+            LogLog.debug("Read config for " + RegexFilter.class.getName() + " from " + path + ": " + filterItems);
+            return filterItems;
         }
-    }
 
-    @Value
-    private static class ConfigItem {
-        Level level;
-        Pattern pattern;
+        static abstract class FilterItem {
 
-        static ConfigItem of(String s) {
-            int idx = s.indexOf(' ');
-            String level = s.substring(0, idx).trim();
-            String regex = s.substring(idx).trim();
-            return new ConfigItem(Level.toLevel(level), Pattern.compile(regex));
+            static FilterItem of(Map<String, Object> yamlFilterItem) {
+                String level = (String) yamlFilterItem.get("level");
+                String message = (String) yamlFilterItem.get("message");
+                boolean regex = getOrDefault(yamlFilterItem, "regex", false);
+                boolean checkStackTrace = getOrDefault(yamlFilterItem, "checkStackTrace", false);
+                return regex
+                        ? new RegexFilterItem(Level.toLevel(level), Pattern.compile(message), checkStackTrace)
+                        : new StringFilterItem(Level.toLevel(level), message, checkStackTrace);
+            }
+
+            static boolean getOrDefault(Map<String, Object> map, String key, boolean defaultValue) {
+                Boolean value = (Boolean) map.get(key);
+                return value == null ? defaultValue : value;
+            }
+
+            abstract Level getLevel();
+
+            abstract boolean isCheckStackTrace();
+
+            abstract boolean matches(String s);
+
+            boolean matches(LoggingEvent event) {
+                boolean matches = false;
+                if (getLevel().equals(event.getLevel())) {
+                    matches = matches(event.getRenderedMessage());
+                    if (!matches && isCheckStackTrace()) {
+                        String[] throwableStrRep = event.getThrowableStrRep();
+                        if (throwableStrRep != null) {
+                            int i = 0;
+                            while (!matches && i < throwableStrRep.length) {
+                                matches = matches(throwableStrRep[i++]);
+                            }
+                        }
+                    }
+                }
+                return matches;
+            }
+
+        }
+
+        @Value
+        static class StringFilterItem extends FilterItem {
+            Level level;
+            String message;
+            boolean checkStackTrace;
+
+            @Override boolean matches(String s) {
+                return s.indexOf(message) != -1;
+            }
+        }
+
+        @Value
+        static class RegexFilterItem extends FilterItem {
+            Level level;
+            Pattern message;
+            boolean checkStackTrace;
+
+            @Override boolean matches(String s) {
+                return message.matcher(s).matches();
+            }
         }
     }
 }
