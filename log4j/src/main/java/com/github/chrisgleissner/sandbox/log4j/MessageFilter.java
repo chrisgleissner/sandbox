@@ -119,7 +119,11 @@ public class MessageFilter extends Filter {
 
             static FilterItem of(Map<String, Object> yamlFilterItem) {
                 val level = (String) yamlFilterItem.get("level");
+                if (level == null)
+                    throw new RuntimeException("Missing level");
                 val message = (String) yamlFilterItem.get("message");
+                if (message == null)
+                    throw new RuntimeException("Missing message");
                 val regex = getOrDefault(yamlFilterItem, "regex", false);
                 val checkStackTrace = getOrDefault(yamlFilterItem, "checkStackTrace", false);
                 return regex
