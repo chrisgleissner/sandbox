@@ -43,17 +43,13 @@ public class MessageFilter extends Filter {
 
     public int decide(LoggingEvent event) {
         val msg = event.getRenderedMessage();
-        try {
-            if (msg != null && config != null) {
-                for (val filterItem : config.getFilterItems()) {
-                    if (filterItem.matches(event)) {
-                        deniedCount.incrementAndGet();
-                        return Filter.DENY;
-                    }
+        if (config != null) {
+            for (val filterItem : config.getFilterItems()) {
+                if (filterItem.matches(event)) {
+                    deniedCount.incrementAndGet();
+                    return Filter.DENY;
                 }
             }
-        } catch (Throwable e) {
-            LogLog.warn("Failed to filter", e);
         }
         return Filter.NEUTRAL;
     }
@@ -93,7 +89,7 @@ public class MessageFilter extends Filter {
 
         List<FilterItem> loadFilterItems(Path path) throws IOException {
             val filterItems = new ArrayList<FilterItem>();
-            if (path.toFile().exists() && path.toFile().isFile()) {
+            if (path.toFile().isFile()) {
                 try (val fis = new FileInputStream(path.toFile())) {
                     List<Map<String, Object>> yamlDocument = new Yaml().load(fis);
                     for (val yamlFilterItem : yamlDocument) {
