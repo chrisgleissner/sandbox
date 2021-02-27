@@ -1,7 +1,6 @@
 package com.github.chrisgleissner.sandbox.kotlin.core
 
 import mu.KotlinLogging
-import java.lang.RuntimeException
 
 object MathUtil {
     private val log = KotlinLogging.logger {}
