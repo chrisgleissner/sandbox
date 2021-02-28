@@ -4,12 +4,13 @@
 
     <groupId>com.github.chrisgleissner.sandbox</groupId>
     <artifactId>sandbox-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>jdbclog</module>
         <module>kotlin</module>
+        <module>kotlin-java7</module>
         <module>log4j</module>
         <module>springboot-neo4j-multiple-dbs</module>
     </modules>
