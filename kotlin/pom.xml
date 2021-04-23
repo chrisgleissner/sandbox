@@ -9,10 +9,8 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>1.4.31</kotlin.version>
+        <kotlin.version>1.4.32</kotlin.version>
     </properties>
 
     <dependencies>
@@ -37,10 +35,9 @@
             <version>${kotlin.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.18</version>
-            <scope>provided</scope>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-core</artifactId>
+            <version>1.4.3</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
@@ -93,8 +90,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
+                    <release>11</release>
                 </configuration>
                 <executions>
                     <execution>
